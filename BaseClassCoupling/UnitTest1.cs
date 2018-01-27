@@ -10,15 +10,28 @@ namespace BaseClassCoupling
         public void calculate_LessThanOneYearEmployee_Bonus()
         {
             //if my monthly salary is 1200, working year is 0.5, my bonus should be 600
-            var lessThanOneYearEmployee = new LessThanOneYearEmployee()
+            var lessThanOneYearEmployee = new FakeLessThanOneYearEmployee()
             {
                 Id = 91,
-                //Console.WriteLine("your StartDate should be :{0}", DateTime.Today.AddDays(365/2*-1));
                 StartWorkingDate = new DateTime(2017, 7, 29)
             };
 
+            //Console.WriteLine("your StartDate should be :{0}", DateTime.Today.AddDays(365/2*-1));
             var actual = lessThanOneYearEmployee.GetYearlyBonus();
             Assert.AreEqual(600, actual);
+        }
+    }
+
+    internal class FakeLessThanOneYearEmployee : LessThanOneYearEmployee
+    {
+        protected override decimal GetMonthlySalary()
+        {
+            return 1200;
+        }
+
+        protected override void LogSalaryInfo(decimal salary)
+        {
+            Console.WriteLine("Salary {0} ", salary);
         }
     }
 
@@ -26,7 +39,7 @@ namespace BaseClassCoupling
     {
         public DateTime StartWorkingDate { get; set; }
 
-        protected decimal GetMonthlySalary()
+        protected virtual decimal GetMonthlySalary()
         {
             DebugHelper.Info($"query monthly salary id:{Id}");
             return SalaryRepo.Get(this.Id);
@@ -42,13 +55,18 @@ namespace BaseClassCoupling
         public override decimal GetYearlyBonus()
         {
             var salary = this.GetMonthlySalary();
-            DebugHelper.Info($"id:{Id}, his monthly salary is:{salary}");
+            LogSalaryInfo(salary);
             return Convert.ToDecimal(this.WorkingYear()) * salary;
+        }
+
+        protected virtual void LogSalaryInfo(decimal salary)
+        {
+            DebugHelper.Info($"id:{Id}, his monthly salary is:{salary}");
         }
 
         private double WorkingYear()
         {
-            var year = (DateTime.Now - StartWorkingDate).TotalDays / 365;
+            var year = Math.Round((DateTime.Today - StartWorkingDate).TotalDays / 365, 2);
             return year > 1 ? 1 : year;
         }
     }
